@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Time Machine — Future Career Predictor</title>
+<meta name="description" content="Pick a skill. Dial forward four years. See which careers it opens up.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #12162c;
+    --bg-vignette: radial-gradient(circle at 50% -10%, #232a54 0%, #12162c 55%);
+    --panel: #1b2145;
+    --panel-edge: #323a72;
+    --brass: #d4a24c;
+    --brass-dim: #8a6b34;
+    --teal: #4fbdba;
+    --teal-dim: #2c6b6a;
+    --ink: #f1ede2;
+    --ink-dim: #a9abc9;
+    --rust: #c06a4d;
+    --radius: 10px;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg-vignette), var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a{ color: var(--teal); }
+
+  main{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 40px 20px 64px;
+  }
+
+  /* ---------- Console header ---------- */
+  .console{
+    position: relative;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: var(--radius);
+    padding: 32px 24px 28px;
+    text-align: center;
+    box-shadow: 0 30px 60px -30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .rivet{
+    position:absolute;
+    width:6px; height:6px;
+    border-radius:50%;
+    background: var(--brass-dim);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.3);
+  }
+  .rivet.tl{ top:10px; left:10px; }
+  .rivet.tr{ top:10px; right:10px; }
+  .rivet.bl{ bottom:10px; left:10px; }
+  .rivet.br{ bottom:10px; right:10px; }
+
+  h1{
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(28px, 6vw, 40px);
+    letter-spacing: 0.01em;
+    margin: 0 0 6px;
+  }
+  .tagline{
+    color: var(--ink-dim);
+    font-size: 15px;
+    margin: 0 0 26px;
+  }
+
+  .odometer{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .year-block{ text-align:center; }
+  .year-label{
+    font-size: 11px;
+    color: var(--ink-dim);
+    margin-bottom: 6px;
+  }
+  .year-digits{
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: clamp(26px, 6vw, 34px);
+    background: #0e1128;
+    border: 1px solid var(--panel-edge);
+    border-radius: 6px;
+    padding: 8px 14px;
+    letter-spacing: 0.06em;
+    color: var(--brass);
+    min-width: 118px;
+  }
+  #target-digits{ color: var(--teal); }
+  .dial-arrow{
+    color: var(--brass-dim);
+    font-size: 22px;
+    transform: translateY(6px);
+  }
+
+  /* ---------- Skill picker ---------- */
+  section{ margin-top: 34px; }
+  .section-label{
+    font-size: 13px;
+    color: var(--ink-dim);
+    margin: 0 0 12px;
+  }
+  .skill-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+  }
+  .chip{
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .chip:hover{ border-color: var(--brass-dim); }
+  .chip:focus-visible{ outline: 2px solid var(--teal); outline-offset: 2px; }
+  .chip[aria-pressed="true"]{
+    background: linear-gradient(180deg, #24305f, #1b2145);
+    border-color: var(--teal);
+    box-shadow: inset 0 0 0 1px var(--teal);
+  }
+
+  .engage-row{
+    margin-top: 18px;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  #engage{
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: #12162c;
+    background: linear-gradient(180deg, #e6bd6f, var(--brass));
+    border: none;
+    border-radius: 8px;
+    padding: 13px 26px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px -8px rgba(212,162,76,0.6);
+    transition: transform 0.12s ease;
+  }
+  #engage:hover{ transform: translateY(-1px); }
+  #engage:focus-visible{ outline: 2px solid var(--teal); outline-offset: 3px; }
+  #helper{
+    font-size: 13px;
+    color: var(--rust);
+    min-height: 16px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  #helper.show{ opacity: 1; }
+
+  /* ---------- Reveal panel ---------- */
+  #reveal{
+    margin-top: 30px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+  #reveal.visible{ opacity: 1; transform: translateY(0); }
+  #reveal-heading{
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  #reveal-sub{
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    margin: 0 0 16px;
+  }
+
+  .job-card{
+    display:flex;
+    gap: 16px;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-left: 3px solid var(--teal);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .gauge{ flex: 0 0 auto; text-align:center; }
+  .gauge svg{ display:block; }
+  .gauge-pct{
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--teal);
+    margin-top: 2px;
+  }
+  .job-body h3{
+    font-family: 'Inter', sans-serif;
+    font-size: 15.5px;
+    font-weight: 600;
+    margin: 0 0 3px;
+  }
+  .demand-label{
+    font-size: 12px;
+    color: var(--brass);
+    margin: 0 0 6px;
+  }
+  .job-body p{
+    font-size: 13.5px;
+    color: var(--ink-dim);
+    margin: 0 0 8px;
+  }
+  .next-row{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tag{
+    font-size: 11.5px;
+    color: var(--ink);
+    background: #0e1128;
+    border: 1px solid var(--panel-edge);
+    border-radius: 5px;
+    padding: 3px 8px;
+  }
+
+  /* ---------- Footer trend strip ---------- */
+  .trend-block{
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--panel-edge);
+  }
+  .trend-block h2{
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  .trend-block p.note{
+    font-size: 13px;
+    color: var(--ink-dim);
+    margin: 0 0 12px;
+  }
+  .pill-row{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 22px;
+  }
+  .pill{
+    font-size: 12.5px;
+    border-radius: 20px;
+    padding: 5px 12px;
+  }
+  .pill.up{ background: rgba(79,189,186,0.12); color: var(--teal); border: 1px solid var(--teal-dim); }
+  .pill.down{ background: rgba(192,106,77,0.12); color: var(--rust); border: 1px solid #6e3f2f; }
+
+  footer{
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--ink-dim);
+  }
+  footer p{ margin: 0 0 6px; }
+
+  @media (prefers-reduced-motion: reduce){
+    #reveal, #engage, .chip{ transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <div class="console">
+    <span class="rivet tl"></span><span class="rivet tr"></span>
+    <span class="rivet bl"></span><span class="rivet br"></span>
+    <h1>Job Time Machine</h1>
+    <p class="tagline">Pick one skill. Dial the machine forward four years. See what it turns into.</p>
+    <div class="odometer">
+      <div class="year-block">
+        <div class="year-label">now</div>
+        <div class="year-digits" id="now-digits">2026</div>
+      </div>
+      <div class="dial-arrow">&#8594;</div>
+      <div class="year-block">
+        <div class="year-label">destination</div>
+        <div class="year-digits" id="target-digits">----</div>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <p class="section-label">Choose the skill you're fuelling the machine with</p>
+    <div class="skill-grid" id="skill-grid"></div>
+    <div class="engage-row">
+      <button id="engage">Engage time drive</button>
+      <p id="helper">Pick a skill first — the machine needs something to run on.</p>
+    </div>
+  </section>
+
+  <section id="reveal">
+    <h2 id="reveal-heading"></h2>
+    <p id="reveal-sub"></p>
+    <div id="job-cards"></div>
+  </section>
+
+  <div class="trend-block">
+    <h2>Rising fastest across every skill, 2026&ndash;2030</h2>
+    <p class="note">Broad signal from the World Economic Forum's Future of Jobs Report 2025, regardless of which skill you pick above.</p>
+    <div class="pill-row">
+      <span class="pill up">Big data specialists</span>
+      <span class="pill up">FinTech engineers</span>
+      <span class="pill up">AI &amp; ML specialists</span>
+      <span class="pill up">Software developers</span>
+      <span class="pill up">Security specialists</span>
+      <span class="pill up">EV &amp; autonomous vehicle specialists</span>
+      <span class="pill up">Renewable energy engineers</span>
+    </div>
+    <h2>Roles under the most pressure</h2>
+    <p class="note">Worth knowing before you specialise — these are shrinking as automation and generative AI spread.</p>
+    <div class="pill-row">
+      <span class="pill down">Data-entry clerks</span>
+      <span class="pill down">Administrative &amp; executive secretaries</span>
+      <span class="pill down">Cashiers</span>
+      <span class="pill down">Traditional graphic designers</span>
+      <span class="pill down">Security guards</span>
+      <span class="pill down">Bank tellers</span>
+      <span class="pill down">Postal workers</span>
+    </div>
+  </div>
+
+  <footer>
+    <p>Demand levels are directional projections built from published labour-market trend reporting (WEF Future of Jobs Report 2025) plus general industry trajectory — not a guarantee for any individual, region, or employer. Treat this as a starting point for research, not a final answer.</p>
+    <p>Job Time Machine — a skill-to-career predictor project.</p>
+  </footer>
+
+</main>
+
+<script>
+  const SKILLS = [
+    { id:'ai', label:'AI & Machine Learning', jobs:[
+      {title:'AI / ML Engineer', demand:'Very high', pct:92, desc:'Builds and ships machine learning models inside real products and pipelines.', next:['Python','Deep learning','MLOps']},
+      {title:'AI Systems / Prompt Designer', demand:'High', pct:75, desc:'Designs and tunes AI-driven workflows, agents and copilots for businesses.', next:['LLM APIs','Systems design']},
+      {title:'AI Governance Specialist', demand:'Medium-high', pct:60, desc:'Keeps AI deployments safe, fair and compliant as adoption spreads.', next:['Policy','Risk assessment']},
+    ]},
+    { id:'data', label:'Data Science & Big Data', jobs:[
+      {title:'Big Data Specialist', demand:'Very high', pct:94, desc:'Manages and extracts insight from large-scale data pipelines — the WEF report\'s single fastest-growing role.', next:['SQL','Spark','Cloud warehouses']},
+      {title:'Data Analyst / BI Developer', demand:'High', pct:78, desc:'Turns raw data into dashboards and decisions for a business.', next:['Power BI / Tableau','Statistics']},
+      {title:'Data Engineer', demand:'High', pct:76, desc:'Builds the pipelines and infrastructure that keep data flowing reliably.', next:['ETL tools','Distributed systems']},
+    ]},
+    { id:'cyber', label:'Cybersecurity', jobs:[
+      {title:'Security Management Specialist', demand:'Very high', pct:90, desc:'Leads protection strategy and incident response for an organisation.', next:['Network security','Threat modelling']},
+      {title:'Cloud Security Engineer', demand:'High', pct:79, desc:'Secures cloud infrastructure as more workloads move off-premise.', next:['AWS/Azure security','IAM']},
+      {title:'Ethical Hacker / Pen Tester', demand:'Medium-high', pct:62, desc:'Finds vulnerabilities before attackers do.', next:['CEH','Hands-on labs']},
+    ]},
+    { id:'cloud', label:'Cloud & DevOps', jobs:[
+      {title:'Cloud Solutions Architect', demand:'High', pct:80, desc:'Designs scalable systems across AWS, Azure or GCP.', next:['Cloud certification','Architecture design']},
+      {title:'DevOps / Platform Engineer', demand:'High', pct:77, desc:'Automates build, test and deployment pipelines.', next:['Docker','Kubernetes','CI/CD']},
+      {title:'Site Reliability Engineer', demand:'Medium-high', pct:63, desc:'Keeps large systems running and recovers them fast when they don\'t.', next:['Monitoring','Incident response']},
+    ]},
+    { id:'web', label:'Web Development', jobs:[
+      {title:'Software / Applications Developer', demand:'Very high', pct:88, desc:'Builds the core software products companies run on — the WEF report\'s #4 fastest-growing role.', next:['Data structures','System design']},
+      {title:'Full-Stack Developer', demand:'High', pct:79, desc:'Builds end-to-end web applications, front to back.', next:['JS framework','API design']},
+      {title:'No-code / Low-code Specialist', demand:'Medium', pct:50, desc:'Builds business apps fast without a traditional dev stack.', next:['Bubble / Power Apps']},
+    ]},
+    { id:'mobile', label:'Mobile App Development', jobs:[
+      {title:'Mobile App Developer', demand:'High', pct:76, desc:'Builds native or cross-platform iOS/Android apps.', next:['Kotlin / Swift','Flutter']},
+      {title:'App Product Engineer', demand:'Medium-high', pct:61, desc:'Blends development with product and analytics thinking.', next:['UX basics','Analytics']},
+    ]},
+    { id:'robotics', label:'Robotics & Mechatronics', jobs:[
+      {title:'Autonomous Systems Specialist', demand:'Very high', pct:89, desc:'Builds self-driving and self-operating systems — one of WEF\'s top-15 fastest-growing roles.', next:['Computer vision','Control theory']},
+      {title:'Robotics Engineer', demand:'High', pct:78, desc:'Designs and programs robotic systems for industry and logistics.', next:['ROS','Embedded systems']},
+      {title:'Automation & Controls Engineer', demand:'High', pct:75, desc:'Automates manufacturing and production processes.', next:['PLC programming','Sensors']},
+    ]},
+    { id:'ev', label:'Electric Vehicles & Automotive', jobs:[
+      {title:'Autonomous & EV Specialist', demand:'Very high', pct:90, desc:'Designs EV powertrains and self-driving features — flagged by WEF as a top-15 growth role.', next:['Battery tech','Embedded control']},
+      {title:'EV Battery Systems Engineer', demand:'High', pct:80, desc:'Improves battery efficiency, safety and lifespan.', next:['Electrochemistry','Thermal systems']},
+      {title:'Automotive Software Engineer', demand:'High', pct:77, desc:'Builds the software running inside modern vehicles.', next:['Embedded C','Real-time systems']},
+    ]},
+    { id:'energy', label:'Renewable Energy', jobs:[
+      {title:'Renewable Energy Engineer', demand:'Very high', pct:88, desc:'Designs solar, wind and storage systems as the green transition accelerates.', next:['Power systems','Sustainability']},
+      {title:'Environmental Engineer', demand:'High', pct:76, desc:'Manages sustainability projects and regulatory compliance.', next:['Environmental science','Regulations']},
+      {title:'Energy Storage Specialist', demand:'High', pct:74, desc:'Develops battery and grid-scale storage technology.', next:['Materials science']},
+    ]},
+    { id:'fintech', label:'Blockchain & FinTech', jobs:[
+      {title:'FinTech Engineer', demand:'Very high', pct:93, desc:'Builds digital finance platforms — WEF\'s #2 fastest-growing role by percentage.', next:['APIs','Security','Finance basics']},
+      {title:'Blockchain Developer', demand:'Medium-high', pct:58, desc:'Builds decentralised applications and smart contracts.', next:['Solidity','Smart contracts']},
+      {title:'Digital Payments Specialist', demand:'Medium', pct:52, desc:'Manages and grows fintech payment products.', next:['Compliance','UX']},
+    ]},
+    { id:'design', label:'UI / UX Design', jobs:[
+      {title:'Product Designer (UX)', demand:'High', pct:73, desc:'Designs user-centred digital products end to end.', next:['Figma','User research']},
+      {title:'Design Systems Specialist', demand:'Medium', pct:54, desc:'Builds and maintains reusable design components at scale.', next:['Design tokens','Front-end basics']},
+    ]},
+    { id:'marketing', label:'Digital Marketing', jobs:[
+      {title:'Growth / Performance Marketer', demand:'Medium-high', pct:62, desc:'Drives measurable growth using data and experimentation.', next:['Analytics','SEO / SEM']},
+      {title:'AI-Driven Content Strategist', demand:'Medium', pct:50, desc:'Blends content strategy with generative-AI tooling.', next:['Gen-AI tools','Copywriting']},
+    ]},
+    { id:'iot', label:'Internet of Things', jobs:[
+      {title:'IoT Systems Engineer', demand:'High', pct:74, desc:'Connects devices and sensors into working networks.', next:['Embedded systems','Networking']},
+      {title:'Smart Infrastructure Engineer', demand:'Medium-high', pct:61, desc:'Builds connected systems for cities and industry.', next:['Edge computing']},
+    ]},
+    { id:'health', label:'Healthcare Technology', jobs:[
+      {title:'Health-Tech / Biomedical Engineer', demand:'High', pct:77, desc:'Builds medical devices and digital health tools.', next:['Biomedical basics','Regulations']},
+      {title:'Care-Tech Support Roles', demand:'Very high', pct:91, desc:'Tech-literate healthcare support is climbing fast as demographic demand grows — WEF flags care roles broadly.', next:['Healthcare training','Digital tools']},
+    ]},
+    { id:'game', label:'Game Dev & AR/VR', jobs:[
+      {title:'Game Developer', demand:'Medium-high', pct:60, desc:'Builds interactive game experiences across platforms.', next:['Unity / Unreal','C#']},
+      {title:'AR / VR Developer', demand:'Medium-high', pct:59, desc:'Builds immersive spatial and mixed-reality experiences.', next:['3D engines','Spatial design']},
+    ]},
+  ];
+
+  const grid = document.getElementById('skill-grid');
+  let selectedId = null;
+
+  SKILLS.forEach(skill => {
+    const btn = document.createElement('button');
+    btn.className = 'chip';
+    btn.type = 'button';
+    btn.textContent = skill.label;
+    btn.setAttribute('aria-pressed', 'false');
+    btn.addEventListener('click', () => {
+      selectedId = skill.id;
+      [...grid.children].forEach(c => c.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
+      document.getElementById('helper').classList.remove('show');
+    });
+    grid.appendChild(btn);
+  });
+
+  function gaugeSvg(pct){
+    const r = 22, c = 2 * Math.PI * r;
+    const offset = c - (c * pct / 100);
+    return `<svg width="56" height="56" viewBox="0 0 56 56">
+      <circle cx="28" cy="28" r="${r}" fill="none" stroke="#0e1128" stroke-width="6"/>
+      <circle cx="28" cy="28" r="${r}" fill="none" stroke="#4fbdba" stroke-width="6"
+        stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round"
+        transform="rotate(-90 28 28)"/>
+    </svg>`;
+  }
+
+  function renderJobs(skill){
+    const heading = document.getElementById('reveal-heading');
+    const sub = document.getElementById('reveal-sub');
+    const cardsWrap = document.getElementById('job-cards');
+    heading.textContent = `${skill.label}, four years from now`;
+    sub.textContent = 'Here is where this skill is projected to lead by 2030.';
+    cardsWrap.innerHTML = skill.jobs.map(job => `
+      <div class="job-card">
+        <div class="gauge">
+          ${gaugeSvg(job.pct)}
+          <div class="gauge-pct">${job.pct}%</div>
+        </div>
+        <div class="job-body">
+          <h3>${job.title}</h3>
+          <p class="demand-label">Demand: ${job.demand}</p>
+          <p>${job.desc}</p>
+          <div class="next-row">
+            ${job.next.map(n => `<span class="tag">${n}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function runOdometer(){
+    return new Promise(resolve => {
+      const el = document.getElementById('target-digits');
+      if (reduceMotion){ el.textContent = '2030'; resolve(); return; }
+      let n = 2026;
+      const timer = setInterval(() => {
+        n++;
+        el.textContent = n;
+        if (n >= 2030){ clearInterval(timer); resolve(); }
+      }, 140);
+    });
+  }
+
+  document.getElementById('engage').addEventListener('click', async () => {
+    const helper = document.getElementById('helper');
+    if (!selectedId){
+      helper.classList.add('show');
+      return;
+    }
+    helper.classList.remove('show');
+    const skill = SKILLS.find(s => s.id === selectedId);
+    const reveal = document.getElementById('reveal');
+    reveal.classList.remove('visible');
+    await runOdometer();
+    renderJobs(skill);
+    requestAnimationFrame(() => {
+      reveal.classList.add('visible');
+      reveal.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    });
+  });
+</script>
+</body>
+</html>
